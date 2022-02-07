@@ -1,0 +1,18 @@
+# MAX gen~ MOD Deploy
+
+This folder contains all the needed files to prepare a MAX gen~ object as LV2 plugin for MOD.
+You only need to copy 2 files and give the plugin a name.
+The MOD cloud will handle the plugin building, so no toolchain or cross-compiler is needed in this process.
+Just a computer running Linux or macOS.
+
+
+# Building the plugin
+To begin, copy your gen_exported.cpp and gen_exported.h files into the main folder (where this README resides).
+Then run 'mod-build.sh'.
+It will ask you to give the plugin a name (you can optionally pass the name as arguments in command-line).
+If everything goes well, the cloud should give back to you a tar.gz file.
+
+
+# Deploying the plugin
+After you build the plugin via MOD Cloud and got yourself a tar.gz file, run the 'mod-deploy.sh' script.
+Note: make sure your MOD Duo is connected to your computer via USB.
