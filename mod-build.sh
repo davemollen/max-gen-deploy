@@ -41,7 +41,18 @@ COPYFILE_DISABLE=1 tar zhcf max-gen-plugin.tar.gz max-gen-plugin
 ###################################################################################################
 # Request cloud build
 
-python publish.py
+PS3='Please enter your target device: '
+targets=("all" "duo" "duox" "dwarf" "quit")
+select target in "${targets[@]}"
+do
+    case $target in
+        "all" | "duo" | "duox" | "dwarf")
+            python publish.py --target $target
+            break
+            ;;
+        *) echo "invalid option";;
+    esac
+done
 
 ###################################################################################################
 # Cleanup

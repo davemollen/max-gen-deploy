@@ -5,6 +5,8 @@ from __future__ import print_function
 import json
 import os
 import sys
+import getopt
+import ssl
 from datetime import datetime
 from hashlib import md5
 from time import sleep
@@ -37,7 +39,10 @@ if 'keep_environment' in sys.argv:
     process['keep_environment'] = True
 
 print('Submitting process...')
-req = urlopen(base_url, json.dumps(process).encode())
+ctx = ssl.create_default_context()
+ctx.check_hostname = False
+ctx.verify_mode = ssl.CERT_NONE
+req = urlopen(base_url, json.dumps(process).encode(), context=ctx)
 release_process = json.loads(req.read().decode())
 
 id = release_process['id']
@@ -47,7 +52,7 @@ sys.stdout.flush()
 
 with open('max-gen-plugin.tar.gz', 'rb') as fh:
     data = fh.read()
-    checksum = json.loads(urlopen(release_process['source-href'], data).read().decode())
+    checksum = json.loads(urlopen(release_process['source-href'], data, context=ctx).read().decode())
 print('Done')
 
 print('Checking md5 {0} ...'.format(checksum), end='')
@@ -64,7 +69,7 @@ timeout = 10 * 60  # 10 min
 started = datetime.now()
 try:
     while True:
-        release_process = json.loads(urlopen(release_process_url).read().decode())
+        release_process = json.loads(urlopen(release_process_url, context=ctx).read().decode())
         status = release_process['status']
         if status == 'error':
             raise Exception('Process {0} failed, contact MOD Team for more details'.format(id))
@@ -80,8 +85,27 @@ except Exception as ex:
     exit(1)
 finally:
     print('\n')
-r = urlopen('{0}bundles/{1}/duo/'.format(release_process_url, bundle_name))
-filename = '../{0}-duo.tar.gz'.format(bundle_name)
-with open(filename, 'wb') as fh:
-    fh.write(r.read())
-print('Finished downloading {0}'.format(os.path.basename(filename)))
+
+target = 'all'
+arguments, values = getopt.getopt(sys.argv[1:], "t:", ["target="])
+for currentArgument, currentValue in arguments:
+    if currentArgument in ["-t", "--target"]:
+        target = currentValue  
+
+if target == 'all' or target == 'duo':
+    r = urlopen('{0}bundles/{1}/duo/'.format(release_process_url, bundle_name), context=ctx)
+    filename = '../{0}-duo.tar.gz'.format(bundle_name)
+    with open(filename, 'wb') as fh:
+        fh.write(r.read())
+if target == 'all' or target == 'duox':
+    r = urlopen('{0}bundles/{1}/aarch64-a53/'.format(release_process_url, bundle_name), context=ctx)
+    filename = '../{0}-duox.tar.gz'.format(bundle_name)
+    with open(filename, 'wb') as fh:
+        fh.write(r.read())
+if target == 'all' or target == 'dwarf':
+    r = urlopen('{0}bundles/{1}/aarch64-a35/'.format(release_process_url, bundle_name), context=ctx)
+    filename = '../{0}-dwarf.tar.gz'.format(bundle_name)
+    with open(filename, 'wb') as fh:
+        fh.write(r.read())
+
+print('Finished downloading')
